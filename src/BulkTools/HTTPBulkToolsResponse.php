@@ -43,9 +43,9 @@ class HTTPBulkToolsResponse extends HTTPResponse
      * We always return JSON
      * @var array
      */
-    protected $headers = array(
+    protected $headers = [
         "content-type" => "application/json; charset=utf-8",
-    );
+    ];
 
     /**
      * Does the bulk action removes rows?
@@ -108,8 +108,6 @@ class HTTPBulkToolsResponse extends HTTPResponse
         $this->removesRows = $removesRows;
         $this->gridField = $gridfield;
 
-        register_shutdown_function(array($this, 'shutdown'));
-
         parent::__construct(null, $statusCode);
     }
 
@@ -123,7 +121,7 @@ class HTTPBulkToolsResponse extends HTTPResponse
      */
     public function addHeader($header, $value)
     {
-        if($header === "content-type") {
+        if ($header === "content-type") {
             return $this;
         }
         return parent::addHeader($header, $value);
@@ -139,7 +137,7 @@ class HTTPBulkToolsResponse extends HTTPResponse
      */
     public function removeHeader($header)
     {
-        if($header === "content-type") {
+        if ($header === "content-type") {
             return $this;
         }
         return parent::removeHeader($header);
@@ -247,20 +245,20 @@ class HTTPBulkToolsResponse extends HTTPResponse
      */
     public function addFailedRecord($record, $message)
     {
-        $this->failedRecords[] = array('id' => $record->ID, 'class' => $record->ClassName, 'message' => $message);
+        $this->failedRecords[] = ['id' => $record->ID, 'class' => $record->ClassName, 'message' => $message];
         return $this;
     }
 
     /**
      * Add a list of records to the failed to modified list with a common error message
-     * @param SS_List $records  the failed dataObject list
+     * @param SS_List $records the failed dataObject list
      * @param string $message error message
      * @return $this
      */
     public function addFailedRecords(SS_List $records, $message)
     {
         foreach ($records as $record) {
-            $this->failedRecords[] = array('id' => $record->ID, 'class' => $record->ClassName, 'message' => $message);
+            $this->failedRecords[] = ['id' => $record->ID, 'class' => $record->ClassName, 'message' => $message];
         }
         return $this;
     }
@@ -276,12 +274,12 @@ class HTTPBulkToolsResponse extends HTTPResponse
 
     /**
      * Creates a gridfield table row for a given record
-     * @param  DataObject $record the record to create the row for
+     * @param DataObject $record the record to create the row for
      * @return string         the html TR tag
      */
     protected function getRecordGridfieldRow($record)
     {
-        $this->gridField->setList(new ArrayList(array($record)));
+        $this->gridField->setList(new ArrayList([$record]));
         $rowContent = '';
 
         foreach ($this->gridField->getColumns() as $column) {
@@ -299,11 +297,11 @@ class HTTPBulkToolsResponse extends HTTPResponse
             );
         }
 
-        $rowAttributes = array(
-            'class' => 'ss-gridfield-item ' . implode(' ', $this->successClasses),
-            'data-id' => $record->ID,
+        $rowAttributes = [
+            'class'      => 'ss-gridfield-item ' . implode(' ', $this->successClasses),
+            'data-id'    => $record->ID,
             'data-class' => $record->ClassName,
-        );
+        ];
 
         return HTML::createTag(
             'tr',
@@ -317,23 +315,24 @@ class HTTPBulkToolsResponse extends HTTPResponse
      */
     public function createBody()
     {
-        $body = array(
-            'isDestructive' => $this->removesRows,
-            'isError' => $this->isError(),
-            'isWarning' => false,
-            'message' => $this->message,
+        $body = [
+            'isDestructive'  => $this->removesRows,
+            'isError'        => $this->isError(),
+            'isWarning'      => false,
+            'message'        => $this->message,
             'successClasses' => $this->successClasses,
-            'failedClasses' => $this->failedClasses
-        );
+            'failedClasses'  => $this->failedClasses,
+            'records'        => []
+        ];
 
         if (!$this->isError()) {
-            $body['records'] = array(
-                'success' => array(),
-                'failed' => array()
-            );
+            $body['records'] = [
+                'success' => [],
+                'failed'  => []
+            ];
 
             foreach ($this->successRecords as $record) {
-                $data = array('id' => $record->ID, 'class' => $record->ClassName);
+                $data = ['id' => $record->ID, 'class' => $record->ClassName];
                 if (!$this->removesRows) {
                     $data['row'] = $this->getRecordGridfieldRow($record);
                 }
@@ -343,11 +342,13 @@ class HTTPBulkToolsResponse extends HTTPResponse
             $body['records']['failed'] = $this->failedRecords;
         }
 
-        if (count($body['records']['success']) === 0) {
-            $body['isWarning'] = true;
+        if (isset($body['records']['success'])) {
+            if (count($body['records']['success']) === 0) {
+                $body['isWarning'] = true;
+            }
         }
 
-        $this->body = json_encode($body);
+        $this->body = json_encode($body, JSON_HEX_TAG, JSON_HEX_QUOT);
     }
 
     /**
@@ -358,19 +359,5 @@ class HTTPBulkToolsResponse extends HTTPResponse
     {
         $this->createBody();
         parent::outputBody();
-    }
-
-    /**
-     * Catches fatal PHP error and output something useful for the front end
-     */
-    public function shutdown()
-    {
-        $error = error_get_last();
-        if ($error !== null ) {
-            $this->setMessage($error['message']);
-            $this->setStatusCode(500, $error['message']);
-            $this->outputBody();
-            exit();
-        }
     }
 }

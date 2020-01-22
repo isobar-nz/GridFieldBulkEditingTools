@@ -36,10 +36,10 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
      *
      * @var array
      */
-    protected $config = array(
+    protected $config = [
         'editableFields' => null,
-        'actions' => array(),
-    );
+        'actions'        => [],
+    ];
 
     /**
      * BulkManager component constructor.
@@ -92,7 +92,7 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
         }
 
         if (($reference == 'editableFields') && !is_array($value)) {
-            $value = array($value);
+            $value = [$value];
         }
 
         $this->config[$reference] = $value;
@@ -135,8 +135,7 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
 
         $handler = Injector::inst()->get($handlerClassName);
         $urlSegment = $handler->config()->get('url_segment');
-        if (!$urlSegment)
-        {
+        if (!$urlSegment) {
             $rc = new ReflectionClass($handlerClassName);
             $urlSegment = $rc->getShortName();
         }
@@ -160,10 +159,8 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
             user_error("Provide either a class name or URL segment", E_USER_ERROR);
         }
 
-        foreach ($this->config['actions'] as $url => $class)
-        {
-            if ($handlerClassName === $class || $urlSegment === $url)
-            {
+        foreach ($this->config['actions'] as $url => $class) {
+            if ($handlerClassName === $class || $urlSegment === $url) {
                 unset($this->config['actions'][$url]);
                 return $this;
             }
@@ -190,7 +187,7 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
      * Add bulk select column.
      *
      * @param GridField $gridField Current GridField instance
-     * @param array     $columns   Columns list
+     * @param array $columns Columns list
      */
     public function augmentColumns($gridField, &$columns)
     {
@@ -208,15 +205,15 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
      */
     public function getColumnsHandled($gridField)
     {
-        return array('BulkSelect');
+        return ['BulkSelect'];
     }
 
     /**
      * Sets the column's content.
      *
-     * @param GridField  $gridField  Current GridField instance
-     * @param DataObject $record     Record intance for this row
-     * @param string     $columnName Column's name for which we need content
+     * @param GridField $gridField Current GridField instance
+     * @param DataObject $record Record intance for this row
+     * @param string $columnName Column's name for which we need content
      *
      * @return mixed Column's field content
      */
@@ -232,29 +229,29 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
     /**
      * Set the column's HTML attributes.
      *
-     * @param GridField  $gridField  Current GridField instance
-     * @param DataObject $record     Record instance for this row
-     * @param string     $columnName Column's name for which we need attributes
+     * @param GridField $gridField Current GridField instance
+     * @param DataObject $record Record instance for this row
+     * @param string $columnName Column's name for which we need attributes
      *
      * @return array List of HTML attributes
      */
     public function getColumnAttributes($gridField, $record, $columnName)
     {
-        return array('class' => 'col-bulkSelect');
+        return ['class' => 'col-bulkSelect'];
     }
 
     /**
      * Set the column's meta data.
      *
-     * @param GridField $gridField  Current GridField instance
-     * @param string    $columnName Column's name for which we need meta data
+     * @param GridField $gridField Current GridField instance
+     * @param string $columnName Column's name for which we need meta data
      *
      * @return array List of meta data
      */
     public function getColumnMetadata($gridField, $columnName)
     {
         if ($columnName == 'BulkSelect') {
-            return array('title' => 'Select');
+            return ['title' => 'Select'];
         }
     }
 
@@ -277,8 +274,8 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
             user_error('Trying to use BulkManager without any bulk action.', E_USER_ERROR);
         }
 
-        $actionsListSource = array();
-        $actionsConfig = array();
+        $actionsListSource = [];
+        $actionsConfig = [];
 
         foreach ($this->config['actions'] as $urlSegment => $handlerClassName) {
             $handler = Injector::inst()->get($handlerClassName);
@@ -298,24 +295,24 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
             ->setEmptyString(_t('SilverStripe\Admin\LeftAndMain.DropdownBatchActionsDefault', 'Choose an action...'));
 
 
-        $templateData = array(
-            'Menu' => $dropDownActionsList->FieldHolder(),
-            'Button' => array(
-                'Label' => _t('GRIDFIELD_BULK_MANAGER.ACTION_BTN_LABEL', 'Go'),
-                'DataURL' => $gridField->Link('bulkAction'),
-                'DataConfig' => json_encode($actionsConfig)
-            ),
-            'Select' => array(
+        $templateData = [
+            'Menu'    => $dropDownActionsList->FieldHolder(),
+            'Button'  => [
+                'Label'      => _t('GRIDFIELD_BULK_MANAGER.ACTION_BTN_LABEL', 'Go'),
+                'DataURL'    => $gridField->Link('bulkAction'),
+                'DataConfig' => json_encode($actionsConfig, JSON_HEX_TAG, JSON_HEX_QUOT)
+            ],
+            'Select'  => [
                 'Label' => _t('GRIDFIELD_BULK_MANAGER.SELECT_ALL_LABEL', 'Select all'),
-            ),
+            ],
             'Colspan' => (count($gridField->getColumns()) - 1),
-        );
+        ];
 
         $templateData = new ArrayData($templateData);
 
-        return array(
+        return [
             'header' => $templateData->renderWith('Colymba\\BulkManager\\BulkManagerButtons'),
-        );
+        ];
     }
 
     /* **********************************************************************
@@ -331,9 +328,9 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
      */
     public function getURLHandlers($gridField)
     {
-        return array(
+        return [
             'bulkAction' => 'handleBulkAction',
-        );
+        ];
     }
 
     /**
@@ -344,7 +341,7 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
      * $url_handlers rule should not use wildcards like '$Action' => '$Action'
      * but have more specific path defined
      *
-     * @param GridField      $gridField
+     * @param GridField $gridField
      * @param HTTPRequest $request
      *
      * @return mixed
