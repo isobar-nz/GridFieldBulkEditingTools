@@ -2,11 +2,8 @@
 
 namespace Colymba\BulkManager\BulkAction;
 
-use Colymba\BulkManager\BulkAction\Handler;
 use Colymba\BulkTools\HTTPBulkToolsResponse;
-use SilverStripe\Core\Convert;
 use SilverStripe\Control\HTTPRequest;
-use SilverStripe\Control\HTTPResponse;
 use Exception;
 
 /**
@@ -19,7 +16,7 @@ class UnlinkHandler extends Handler
     /**
      * URL segment used to call this handler
      * If none given, @BulkManager will fallback to the Unqualified class name
-     * 
+     *
      * @var string
      */
     private static $url_segment = 'unlink';
@@ -29,27 +26,27 @@ class UnlinkHandler extends Handler
      *
      * @var array
      */
-    private static $allowed_actions = array('unLink');
+    private static $allowed_actions = ['unLink'];
 
     /**
      * RequestHandler url => action map.
      *
      * @var array
      */
-    private static $url_handlers = array(
+    private static $url_handlers = [
         '' => 'unLink',
-    );
+    ];
 
     /**
      * Front-end label for this handler's action
-     * 
+     *
      * @var string
      */
     protected $label = 'Unlink';
 
     /**
      * Front-end icon path for this handler's action.
-     * 
+     *
      * @var string
      */
     protected $icon = '';
@@ -57,22 +54,22 @@ class UnlinkHandler extends Handler
     /**
      * Extra classes to add to the bulk action button for this handler
      * Can also be used to set the button font-icon e.g. font-icon-trash
-     * 
+     *
      * @var string
      */
     protected $buttonClasses = 'font-icon-link-broken';
-    
+
     /**
      * Whether this handler should be called via an XHR from the front-end
-     * 
+     *
      * @var boolean
      */
     protected $xhr = true;
-    
+
     /**
      * Set to true is this handler will destroy any data.
      * A warning and confirmation will be shown on the front-end.
-     * 
+     *
      * @var boolean
      */
     protected $destructive = false;
@@ -80,7 +77,7 @@ class UnlinkHandler extends Handler
     /**
      * Return i18n localized front-end label
      *
-     * @return array
+     * @return string
      */
     public function getI18nLabel()
     {
@@ -102,12 +99,21 @@ class UnlinkHandler extends Handler
         try {
             //@todo fix this. seems no ids are returned!
             $response->addSuccessRecords($this->getRecords());
-            $this->gridField->list->removeMany($ids);
-            $response->setMessage('UnLinked records.');
+            $this->gridField->getList()->removeMany($ids);
+
+            $doneCount = count($response->getSuccessRecords());
+            $message = sprintf(
+                'Unlinked %1$d records.',
+                $doneCount
+            );
+            $response->setMessage($message);
         } catch (Exception $ex) {
             $response->setStatusCode(500);
-            $response->setMessage($ex->getMessage());
+            $message = $ex->getMessage();
+            $response->setMessage($message);
         }
+
+        $response->addHeader('X-Status', rawurlencode($message));
 
         return $response;
     }

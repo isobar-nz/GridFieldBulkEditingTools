@@ -3,7 +3,6 @@
 namespace Colymba\BulkTools;
 
 use SilverStripe\Control\HTTPResponse;
-use SilverStripe\Core\Convert;
 use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\ORM\ArrayList;
 use SilverStripe\ORM\DataObject;
@@ -103,8 +102,6 @@ class HTTPBulkToolsResponse extends HTTPResponse
      * @param boolean $removesRows Does the action removes rows?
      * @param GridField $gridfield gridfield instance that holds the records list
      * @param int $statusCode The numeric status code - 200, 404, etc
-     * @param string $statusDescription The text to be given alongside the status code.
-     *  See {@link setStatusCode()} for more information.
      */
     public function __construct($removesRows, $gridfield, $statusCode = null)
     {
@@ -122,7 +119,7 @@ class HTTPBulkToolsResponse extends HTTPResponse
      *
      * @param string $header Example: "content-type"
      * @param string $value Example: "text/xml"
-     * @return $this
+     * @return HTTPResponse
      */
     public function addHeader($header, $value)
     {
@@ -138,7 +135,7 @@ class HTTPBulkToolsResponse extends HTTPResponse
      * e.g. "Content-Type".
      *
      * @param string $header
-     * @return $this
+     * @return HTTPResponse
      */
     public function removeHeader($header)
     {
@@ -307,12 +304,12 @@ class HTTPBulkToolsResponse extends HTTPResponse
             'data-id' => $record->ID,
             'data-class' => $record->ClassName,
         );
-        $row = HTML::createTag(
+
+        return HTML::createTag(
             'tr',
             $rowAttributes,
             $rowContent
         );
-        return $row;
     }
 
     /**
@@ -350,7 +347,7 @@ class HTTPBulkToolsResponse extends HTTPResponse
             $body['isWarning'] = true;
         }
 
-        $this->body = Convert::raw2json($body);
+        $this->body = json_encode($body);
     }
 
     /**

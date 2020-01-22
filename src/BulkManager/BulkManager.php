@@ -3,6 +3,7 @@
 namespace Colymba\BulkManager;
 
 use ReflectionClass;
+use ReflectionException;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\RequestHandler;
 use SilverStripe\Core\Injector\Injectable;
@@ -44,7 +45,9 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
      * BulkManager component constructor.
      *
      * @param array $editableFields List of editable fields
-     * @param bool  $defaultActions Use default actions list. False to start fresh.
+     * @param bool $defaultActions Use default actions list. False to start fresh.
+     * @param bool $defaultVersionedActions
+     * @throws ReflectionException
      */
     public function __construct($editableFields = null, $defaultActions = true, $defaultVersionedActions = false)
     {
@@ -75,7 +78,8 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
      * Sets the component configuration parameter.
      *
      * @param string $reference
-     * @param mixed  $value
+     * @param mixed $value
+     * @return BulkManager
      */
     public function setConfig($reference, $value)
     {
@@ -99,7 +103,7 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
     /**
      * Returns one $config parameter of the full $config.
      *
-     * @param string $reference $congif parameter to return
+     * @param bool $reference $congif parameter to return
      *
      * @return mixed
      */
@@ -120,6 +124,8 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
      * @param string $action Specific RequestHandler action to be called.
      *
      * @return $this Current BulkManager instance
+     * @throws ReflectionException
+     * @throws ReflectionException
      */
     public function addBulkAction($handlerClassName, $action = null)
     {
@@ -290,7 +296,7 @@ class BulkManager implements GridField_HTMLProvider, GridField_ColumnProvider, G
             ->addExtraClass('bulkActionName no-change-track form-group--no-label')
             ->setAttribute('id', '')
             ->setEmptyString(_t('SilverStripe\Admin\LeftAndMain.DropdownBatchActionsDefault', 'Choose an action...'));
-            
+
 
         $templateData = array(
             'Menu' => $dropDownActionsList->FieldHolder(),
