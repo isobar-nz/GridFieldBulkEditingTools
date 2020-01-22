@@ -73,13 +73,16 @@ class BulkUploadHandler extends RequestHandler
      * Add DataObject to Gridfield list
      * Publish DataObject if enabled
      *
-     * @param integer     $fileID The newly uploaded/attached file ID
+     * @param integer $fileID The newly uploaded/attached file ID
      *
      * @return  DataObject The new DataObject
+     * @throws \SilverStripe\ORM\ValidationException
      */
     protected function createDataObject($fileID)
     {
         $recordClass = $this->component->getRecordClassName($this->gridField);
+
+        /** @var DataObject $record */
         $record = $recordClass::create();
         $record->write();
 
@@ -89,7 +92,7 @@ class BulkUploadHandler extends RequestHandler
         $record->{"{$fileRelationName}ID"} = $fileID;
         $record->write(); //HasManyList call write on record but not ManyManyList, so we call it here again
 
-        $this->gridField->list->add($record);
+        $this->gridField->getList()->add($record);
 
         if ($this->component->getAutoPublishDataObject() && $record->hasExtension('Versioned'))
         {
@@ -106,6 +109,7 @@ class BulkUploadHandler extends RequestHandler
      * @param HTTPRequest $request
      *
      * @return string json
+     * @throws \SilverStripe\ORM\ValidationException
      */
     public function upload(HTTPRequest $request)
     {
@@ -136,6 +140,7 @@ class BulkUploadHandler extends RequestHandler
      * @param HTTPRequest $request
      *
      * @return HTTPBulkToolsResponse
+     * @throws \SilverStripe\ORM\ValidationException
      */
     public function attach(HTTPRequest $request)
     {

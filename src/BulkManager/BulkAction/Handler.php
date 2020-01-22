@@ -79,7 +79,7 @@ class Handler extends RequestHandler
     protected $destructive = false;
 
     /**
-     * @param GridField            $gridField
+     * @param GridField $gridField
      * @param GridField_URLHandler $component
      */
     public function __construct($gridField = null, $component = null)
@@ -97,14 +97,13 @@ class Handler extends RequestHandler
      */
     public function getConfig()
     {
-        $config = array(
-            'label' => $this->getI18nLabel(),
-            'icon' => $this->getIcon(),
+        return [
+            'label'         => $this->getI18nLabel(),
+            'icon'          => $this->getIcon(),
             'buttonClasses' => $this->getButtonClasses(),
-            'xhr' => $this->getXhr(),
-            'destructive' => $this->getDestructive()
-        );
-        return $config;
+            'xhr'           => $this->getXhr(),
+            'destructive'   => $this->getDestructive()
+        ];
     }
 
     /**
@@ -231,13 +230,13 @@ class Handler extends RequestHandler
     /**
      * Returns the URL for this RequestHandler.
      *
+     * @param string $action
+     *
+     * @return string
      * @author SilverStripe
      *
      * @see GridFieldDetailForm_ItemRequest
      *
-     * @param string $action
-     *
-     * @return string
      */
     public function Link($action = null)
     {

@@ -240,7 +240,7 @@ class BulkUploader implements GridField_HTMLProvider, GridField_URLHandler
      *
      * @param GridField $gridField Current GridField
      *
-     * @return \Colymba\BulkUpload\BulkUploadField Configured UploadField instance
+     * @return BulkUploadField Configured UploadField instance
      */
     public function bulkUploadField($gridField)
     {
