@@ -2,11 +2,8 @@
 
 namespace Colymba\BulkManager\BulkAction;
 
-use Colymba\BulkManager\BulkAction\Handler;
 use Colymba\BulkTools\HTTPBulkToolsResponse;
-use SilverStripe\Core\Convert;
 use SilverStripe\Control\HTTPRequest;
-use SilverStripe\Control\HTTPResponse;
 use Exception;
 
 /**
@@ -19,7 +16,7 @@ class ArchiveHandler extends Handler
     /**
      * URL segment used to call this handler
      * If none given, @BulkManager will fallback to the Unqualified class name
-     * 
+     *
      * @var string
      */
     private static $url_segment = 'archive';
@@ -29,27 +26,27 @@ class ArchiveHandler extends Handler
      *
      * @var array
      */
-    private static $allowed_actions = array('archive');
+    private static $allowed_actions = ['archive'];
 
     /**
      * RequestHandler url => action map.
      *
      * @var array
      */
-    private static $url_handlers = array(
+    private static $url_handlers = [
         '' => 'archive',
-    );
+    ];
 
     /**
      * Front-end label for this handler's action
-     * 
+     *
      * @var string
      */
     protected $label = 'Archive';
 
     /**
      * Front-end icon path for this handler's action.
-     * 
+     *
      * @var string
      */
     protected $icon = '';
@@ -57,22 +54,22 @@ class ArchiveHandler extends Handler
     /**
      * Extra classes to add to the bulk action button for this handler
      * Can also be used to set the button font-icon e.g. font-icon-trash
-     * 
+     *
      * @var string
      */
     protected $buttonClasses = 'font-icon-trash';
-    
+
     /**
      * Whether this handler should be called via an XHR from the front-end
-     * 
+     *
      * @var boolean
      */
     protected $xhr = true;
-    
+
     /**
      * Set to true is this handler will destroy any data.
      * A warning and confirmation will be shown on the front-end.
-     * 
+     *
      * @var boolean
      */
     protected $destructive = true;
@@ -80,7 +77,7 @@ class ArchiveHandler extends Handler
     /**
      * Return i18n localized front-end label
      *
-     * @return array
+     * @return string
      */
     public function getI18nLabel()
     {
@@ -100,13 +97,11 @@ class ArchiveHandler extends Handler
         $response = new HTTPBulkToolsResponse(true, $this->gridField);
 
         try {
-            foreach ($records as $record)
-            {
+            foreach ($records as $record) {
                 $done = $record->doArchive();
-                if ($done)
-                {
+                if ($done) {
                     $response->addSuccessRecord($record);
-                }else{
+                } else {
                     $response->addFailedRecord($record, $done);
                 }
             }
@@ -121,8 +116,11 @@ class ArchiveHandler extends Handler
             $response->setMessage($message);
         } catch (Exception $ex) {
             $response->setStatusCode(500);
-            $response->setMessage($ex->getMessage());
+            $message = $ex->getMessage();
+            $response->setMessage($message);
         }
+
+        $response->addHeader('X-Status', rawurlencode($message));
 
         return $response;
     }

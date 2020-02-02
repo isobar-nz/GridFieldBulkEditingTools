@@ -2,16 +2,18 @@
 
 namespace Colymba\BulkManager\BulkAction;
 
-use Colymba\BulkManager\BulkAction\Handler;
 use SilverStripe\Control\Controller;
-use SilverStripe\Core\Convert;
 use SilverStripe\Control\HTTPResponse;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\Form;
 use SilverStripe\Forms\FormAction;
+use SilverStripe\Forms\GridField\GridFieldDetailForm;
+use SilverStripe\Forms\GridField\GridFieldDetailForm_ItemRequest;
 use SilverStripe\Forms\LiteralField;
 use SilverStripe\Forms\ToggleCompositeField;
+use SilverStripe\ORM\ArrayList;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\ValidationException;
 use SilverStripe\View\ArrayData;
 use SilverStripe\View\Requirements;
 
@@ -25,7 +27,7 @@ class EditHandler extends Handler
     /**
      * URL segment used to call this handler
      * If none given, @BulkManager will fallback to the Unqualified class name
-     * 
+     *
      * @var string
      */
     private static $url_segment = 'edit';
@@ -35,33 +37,33 @@ class EditHandler extends Handler
      *
      * @var array
      */
-    private static $allowed_actions = array(
+    private static $allowed_actions = [
         'index',
         'bulkEditForm',
         'recordEditForm',
-    );
+    ];
 
     /**
      * RequestHandler url => action map.
      *
      * @var array
      */
-    private static $url_handlers = array(
-        'bulkEditForm' => 'bulkEditForm',
+    private static $url_handlers = [
+        'bulkEditForm'   => 'bulkEditForm',
         'recordEditForm' => 'recordEditForm',
-        '' => 'index',
-    );
+        ''               => 'index',
+    ];
 
     /**
      * Front-end label for this handler's action
-     * 
+     *
      * @var string
      */
     protected $label = 'Edit';
 
     /**
      * Front-end icon path for this handler's action.
-     * 
+     *
      * @var string
      */
     protected $icon = '';
@@ -69,22 +71,22 @@ class EditHandler extends Handler
     /**
      * Extra classes to add to the bulk action button for this handler
      * Can also be used to set the button font-icon e.g. font-icon-trash
-     * 
+     *
      * @var string
      */
     protected $buttonClasses = 'font-icon-edit';
-    
+
     /**
      * Whether this handler should be called via an XHR from the front-end
-     * 
+     *
      * @var boolean
      */
     protected $xhr = false;
-    
+
     /**
      * Set to true is this handler will destroy any data.
      * A warning and confirmation will be shown on the front-end.
-     * 
+     *
      * @var boolean
      */
     protected $destructive = false;
@@ -92,7 +94,7 @@ class EditHandler extends Handler
     /**
      * Return i18n localized front-end label
      *
-     * @return array
+     * @return string
      */
     public function getI18nLabel()
     {
@@ -108,7 +110,7 @@ class EditHandler extends Handler
      */
     public function Link($action = null)
     {
-        return Controller::join_links(parent::Link(), $this->stat('url_segment'), $action);
+        return Controller::join_links(parent::Link(), static::config()->get('url_segment'), $action);
     }
 
     /**
@@ -157,14 +159,14 @@ class EditHandler extends Handler
         $headerText = _t(
             'GRIDFIELD_BULKMANAGER_EDIT_HANDLER.HEADER_TEXT',
             'Editing {count} {class}',
-            array(
+            [
                 'count' => $editingCount,
                 'class' => $titleModelClass,
-            )
+            ]
         );
         $header = LiteralField::create(
             'bulkEditHeader',
-            '<h1 id="bulkEditHeader">'.$headerText.'</h1>'
+            '<h1 id="bulkEditHeader">' . $headerText . '</h1>'
         );
         $recordsFieldList->push($header);
 
@@ -184,9 +186,9 @@ class EditHandler extends Handler
                 $record->getTitle(),
                 $recordEditingFields
             )
-            ->setHeadingLevel(4)
-            ->setAttribute('data-id', $id)
-            ->addExtraClass('bulkEditingFieldHolder');
+                ->setHeadingLevel(4)
+                ->setAttribute('data-id', $id)
+                ->addExtraClass('bulkEditingFieldHolder');
 
             $recordsFieldList->push($toggleField);
         }
@@ -206,7 +208,7 @@ class EditHandler extends Handler
         //and add record ids GET var
         $bulkEditForm->setAttribute(
             'action',
-            $this->Link('bulkEditForm?records[]='.implode('&', $recordList))
+            $this->Link('bulkEditForm?records[]=' . implode('&', $recordList))
         );
 
         return $bulkEditForm;
@@ -258,11 +260,11 @@ class EditHandler extends Handler
      * Returns a record's populated form fields
      * with all filtering done ready to be included in the main form.
      *
-     * @uses DataObject::getCMSFields()
-     *
      * @param DataObject $record The record to get the fields from
      *
      * @return array The record's editable fields
+     * @uses DataObject::getCMSFields()
+     *
      */
     private function getRecordEditingFields(DataObject $record)
     {
@@ -289,7 +291,7 @@ class EditHandler extends Handler
      * See {@link BulkManager} component for filtering config.
      *
      * @param FieldList $fields Record's CMS Fields
-     * @param int       $id     Record's ID, used fir unique name
+     * @param int $id Record's ID, used fir unique name
      *
      * @return array Filtered record's fields
      */
@@ -300,7 +302,7 @@ class EditHandler extends Handler
 
         // get all dataFields or just the ones allowed in config
         if ($editableFields) {
-            $dataFields = array();
+            $dataFields = [];
 
             foreach ($editableFields as $fieldName) {
                 $dataFields[$fieldName] = $fields->dataFieldByName($fieldName);
@@ -321,8 +323,8 @@ class EditHandler extends Handler
     /**
      * Escape a fieldName with a unique prefix.
      *
-     * @param int    $recordID Record id from who the field belongs
-     * @param string $name     Field name
+     * @param int $recordID Record id from who the field belongs
+     * @param string $name Field name
      *
      * @return string Escaped field name
      */
@@ -340,16 +342,16 @@ class EditHandler extends Handler
      */
     protected function unEscapeFieldName($fieldName)
     {
-        $parts = array();
+        $parts = [];
         $match = preg_match('/record_(\d+)_(\w+)/i', $fieldName, $parts);
 
         if (!$match) {
             return false;
         } else {
-            return array(
-                'id' => $parts[1],
+            return [
+                'id'   => $parts[1],
                 'name' => $parts[2],
-            );
+            ];
         }
     }
 
@@ -374,17 +376,17 @@ class EditHandler extends Handler
 
         if ($this->request->isAjax()) {
             $response = new HTTPResponse(
-                Convert::raw2json(array('Content' => $form->forAjaxTemplate()->getValue()))
+                json_encode(['Content' => $form->forAjaxTemplate()->getValue()])
             );
             $response->addHeader('X-Pjax', 'Content');
             $response->addHeader('Content-Type', 'text/json');
-            $response->addHeader('X-Title', 'SilverStripe - Bulk ' . $this->gridField->list->dataClass . ' Editing');
+            $response->addHeader('X-Title', 'SilverStripe - Bulk ' . $this->gridField->getList()->dataClass . ' Editing');
 
             return $response;
         } else {
             $controller = $this->getToplevelController();
 
-            return $controller->customise(array('Content' => $form));
+            return $controller->customise(['Content' => $form]);
         }
     }
 
@@ -393,22 +395,24 @@ class EditHandler extends Handler
      * and parses and saves each records data.
      *
      * @param array $data Sumitted form data
-     * @param Form  $form Form
+     * @param Form $form Form
+     * @return HTTPResponse
+     * @throws ValidationException
      */
     public function doSave($data, $form)
     {
-        $className = $this->gridField->list->dataClass;
+        $className = $this->gridField->getList()->dataClass;
         $singleton = singleton($className);
 
-        $formsData = array();
-        $ids = array();
+        $formsData = [];
+        $ids = [];
         $done = 0;
 
         //unescape and sort form data per record ID
         foreach ($data as $fieldName => $value) {
             if ($fieldInfo = $this->unEscapeFieldName($fieldName)) {
                 if (!isset($formsData[$fieldInfo['id']])) {
-                    $formsData[$fieldInfo['id']] = array();
+                    $formsData[$fieldInfo['id']] = [];
                 }
 
                 $formsData[$fieldInfo['id']][$fieldInfo['name']] = $value;
@@ -441,10 +445,10 @@ class EditHandler extends Handler
         $message = _t(
             'GRIDFIELD_BULKMANAGER_EDIT_HANDLER.SAVE_RESULT_TEXT',
             '{count} {class} saved successfully.',
-            array(
+            [
                 'count' => $done,
                 'class' => $messageModelClass,
-            )
+            ]
         );
         $form->sessionMessage($message, 'good');
 
@@ -478,13 +482,13 @@ class EditHandler extends Handler
      * to the template, and includes the currently edited record (if any).
      * see {@link LeftAndMain->Breadcrumbs()} for details.
      *
+     * @param bool $unlinked
+     *
+     * @return ArrayList|void
      * @author SilverStripe original Breadcrumbs() method
      *
      * @see GridFieldDetailForm_ItemRequest
      *
-     * @param bool $unlinked
-     *
-     * @return ArrayData
      */
     public function Breadcrumbs($unlinked = false)
     {
@@ -492,11 +496,13 @@ class EditHandler extends Handler
             return;
         }
 
+        /** @var ArrayList $items */
         $items = Controller::curr()->Breadcrumbs($unlinked);
-        $items->push(new ArrayData(array(
+
+        $items->push(new ArrayData([
             'Title' => 'Bulk Editing',
-            'Link' => false,
-        )));
+            'Link'  => false,
+        ]));
 
         return $items;
     }

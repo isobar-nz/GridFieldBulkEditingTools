@@ -6,12 +6,14 @@ use Colymba\BulkTools\HTTPBulkToolsResponse;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\RequestHandler;
 use SilverStripe\Control\HTTPRequest;
-use SilverStripe\Control\HTTPResponse;
-use SilverStripe\Core\Convert;
+
 //use SilverStripe\Core\Injector\Injector;
 //use SilverStripe\ORM\DataObject;
 
 use SilverStripe\AssetAdmin\Controller\AssetAdmin;
+use SilverStripe\Forms\GridField\GridField;
+use SilverStripe\Forms\GridField\GridField_URLHandler;
+use SilverStripe\ORM\DataObject;
 
 /**
  * Handles request from the GridFieldBulkUpload component.
@@ -55,9 +57,8 @@ class BulkUploadHandler extends RequestHandler
     /**
      * Handler's constructor.
      *
-     * @param GridField            $gridField
+     * @param GridField $gridField
      * @param GridField_URLHandler $component
-     * @param Controller           $controller
      */
     public function __construct($gridField, $component)
     {
@@ -71,14 +72,17 @@ class BulkUploadHandler extends RequestHandler
      * Add file ID to the Dataobject
      * Add DataObject to Gridfield list
      * Publish DataObject if enabled
-     * 
-     * @param integer     $fileID The newly uploaded/attached file ID
+     *
+     * @param integer $fileID The newly uploaded/attached file ID
      *
      * @return  DataObject The new DataObject
+     * @throws \SilverStripe\ORM\ValidationException
      */
     protected function createDataObject($fileID)
     {
         $recordClass = $this->component->getRecordClassName($this->gridField);
+
+        /** @var DataObject $record */
         $record = $recordClass::create();
         $record->write();
 
@@ -87,8 +91,8 @@ class BulkUploadHandler extends RequestHandler
         $fileRelationName = $this->component->getFileRelationName($this->gridField);
         $record->{"{$fileRelationName}ID"} = $fileID;
         $record->write(); //HasManyList call write on record but not ManyManyList, so we call it here again
-        
-        $this->gridField->list->add($record);
+
+        $this->gridField->getList()->add($record);
 
         if ($this->component->getAutoPublishDataObject() && $record->hasExtension('Versioned'))
         {
@@ -105,22 +109,23 @@ class BulkUploadHandler extends RequestHandler
      * @param HTTPRequest $request
      *
      * @return string json
+     * @throws \SilverStripe\ORM\ValidationException
      */
     public function upload(HTTPRequest $request)
     {
         $assetAdmin = AssetAdmin::singleton();
         $uploadResponse = $assetAdmin->apiCreateFile($request);
-        
+
         if ($uploadResponse->getStatusCode() == 200)
         {
-            $responseData = Convert::json2array($uploadResponse->getBody());
+            $responseData = json_decode($uploadResponse->getBody(), true);
             $responseData = array_shift($responseData);
 
             $record = $this->createDataObject($responseData['id']);
 
             $bulkToolsResponse = new HTTPBulkToolsResponse(false, $this->gridField);
             $bulkToolsResponse->addSuccessRecord($record);
-            
+
             $responseData['bulkTools'] = json_decode($bulkToolsResponse->getBody());
             $uploadResponse->setBody(json_encode(array($responseData)));
         }
@@ -135,6 +140,7 @@ class BulkUploadHandler extends RequestHandler
      * @param HTTPRequest $request
      *
      * @return HTTPBulkToolsResponse
+     * @throws \SilverStripe\ORM\ValidationException
      */
     public function attach(HTTPRequest $request)
     {

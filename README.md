@@ -64,7 +64,7 @@ See [BULK_MANAGER.md](docs/en//BULK_MANAGER.md) for detailed configuration.
 
 ## Tooling
 * `npm run watch` for development
-* `npm run dist` before pushing to the repo
+* `npm run build` before pushing to the repo
 
 ## Translations
 
